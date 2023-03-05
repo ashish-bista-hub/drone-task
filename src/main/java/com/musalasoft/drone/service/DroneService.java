@@ -21,4 +21,6 @@ public interface DroneService {
     List<DroneDto> getAllDronesByState(DroneState droneState);
 
     List<MedicationDto> getAllMedications(Long droneId);
+
+    List<MedicationDto> getAllMedications(String serialNo);
 }

@@ -3,6 +3,10 @@ package com.musalasoft.drone.dto;
 import com.musalasoft.drone.constants.DroneModel;
 import com.musalasoft.drone.constants.DroneState;
 
+import javax.validation.constraints.DecimalMax;
+import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,8 +17,11 @@ import java.util.List;
 public class DroneDto {
 
     private Long id;
+    @NotEmpty
+    @Size(min = 15, max = 100, message = "Drone serial number must be between 15-100 characters")
     private String serialNo;
     private DroneModel droneModel;
+    @DecimalMax("500.0") @DecimalMin("1.0")
     private Double weight;
     private Double batteryCapacity;
     private DroneState droneState;
