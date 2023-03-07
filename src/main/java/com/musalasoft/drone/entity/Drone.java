@@ -42,6 +42,14 @@ public class Drone {
     public Drone() {
     }
 
+    public Drone(String serialNo, DroneModel model, Double weight) {
+        this.serialNo = serialNo;
+        this.model = model;
+        this.weight = weight;
+        this.state = DroneState.IDLE;
+        this.percentage = 99D;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }

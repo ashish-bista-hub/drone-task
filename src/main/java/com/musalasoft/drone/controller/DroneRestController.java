@@ -2,6 +2,7 @@ package com.musalasoft.drone.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.musalasoft.drone.constants.DroneState;
+import com.musalasoft.drone.dto.AuditDto;
 import com.musalasoft.drone.dto.DroneDto;
 import com.musalasoft.drone.dto.MedicationDto;
 import com.musalasoft.drone.service.DroneService;
@@ -18,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author ashish.bista
@@ -79,7 +81,14 @@ public class DroneRestController {
     @GetMapping("/medications")
     @ApiOperation(value = "Check loaded medication items for a given drone by serial no",
             notes = "This API allows to check loaded medication items for a given drone by serial no.")
-    public ResponseEntity<List<MedicationDto>> getAllMedicationsForDrone(@RequestParam(value="serialNo") String serialNo) {
+    public ResponseEntity<List<MedicationDto>> getAllMedicationsForDrone(@RequestParam(value = "serialNo") String serialNo) {
         return new ResponseEntity<>(droneService.getAllMedications(serialNo), HttpStatus.OK);
+    }
+
+    @GetMapping("/{droneId}/audits")
+    @ApiOperation(value = "Check drone audit logs by Id",
+            notes = "This API allows to check audit logs for drone by Id")
+    public ResponseEntity<Map<DroneDto, List<AuditDto>>> getAllAuditsForDrone(@PathVariable(value = "droneId") Long droneId) {
+        return new ResponseEntity<>(droneService.getAllAudits(droneId), HttpStatus.OK);
     }
 }

@@ -3,6 +3,7 @@ package com.musalasoft.drone.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.musalasoft.drone.constants.DroneModel;
 import com.musalasoft.drone.constants.DroneState;
+import com.musalasoft.drone.dto.AuditDto;
 import com.musalasoft.drone.dto.DroneDto;
 import com.musalasoft.drone.dto.MedicationDto;
 import com.musalasoft.drone.service.DroneService;
@@ -16,13 +17,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.sql.Date;
+import java.util.*;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -54,6 +54,8 @@ public class DroneRestControllerTests {
                 .andExpect(jsonPath("$.weight").value(28D))
                 .andExpect(jsonPath("$.droneState").value("IDLE"))
                 .andExpect(jsonPath("$.batteryCapacity").value(90D));
+
+        verify(droneService, times(1)).registerDrone(any(DroneDto.class));
     }
 
     @Test
@@ -66,6 +68,8 @@ public class DroneRestControllerTests {
                 .andExpect(jsonPath("$[0].id").value("1"))
                 .andExpect(jsonPath("$[0].serialNo").value("TEST-DRONE-23675890-12679"))
                 .andExpect(jsonPath("$[0].droneState").value("IDLE"));
+
+        verify(droneService, times(1)).getAllDronesByState(any(DroneState.class));
     }
 
     @Test
@@ -78,6 +82,8 @@ public class DroneRestControllerTests {
                 .andExpect(jsonPath("$[0].id").value("1"))
                 .andExpect(jsonPath("$[0].serialNo").value("TEST-DRONE-23675890-12679"))
                 .andExpect(jsonPath("$[0].droneState").value("IDLE"));
+
+        verify(droneService, times(1)).getAllDronesByState(any(DroneState.class));
     }
 
     @Test
@@ -96,6 +102,8 @@ public class DroneRestControllerTests {
                 .andExpect(jsonPath("$[0].code").value("Test-Med-1"))
                 .andExpect(jsonPath("$[1].id").value(2L))
                 .andExpect(jsonPath("$[1].code").value("Test-Med-2"));
+
+        verify(droneService, times(1)).getAllMedications(anyLong());
     }
 
     @Test
@@ -114,6 +122,8 @@ public class DroneRestControllerTests {
                 .andExpect(jsonPath("$[0].code").value("Test-Med-1"))
                 .andExpect(jsonPath("$[1].id").value(2L))
                 .andExpect(jsonPath("$[1].code").value("Test-Med-2"));
+
+        verify(droneService, times(1)).getAllMedications(anyString());
     }
 
     @Test
@@ -136,6 +146,26 @@ public class DroneRestControllerTests {
                 .andExpect(jsonPath("$.batteryCapacity").value(90D))
                 .andExpect(jsonPath("$.medications", hasSize(1)))
                 .andExpect(jsonPath("$.medications[0].imageName").value("med-bottle.png"));
+
+        verify(droneService, times(1)).loadMedications(anyLong(), any(MultipartFile.class), any(MedicationDto.class));
+    }
+
+    @Test
+    public void testAllAudits() throws Exception {
+        when(droneService.getAllAudits(anyLong())).thenReturn(getAuditLogs());
+
+        this.mockMvc.perform(get(DroneRestController.BASE_ENDPOINT + "/" + 1L + "/audits"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.*", hasSize(1)));
+
+        verify(droneService, times(1)).getAllAudits(anyLong());
+    }
+
+    private Map<DroneDto, List<AuditDto>> getAuditLogs() {
+        Map<DroneDto, List<AuditDto>> logs = new LinkedHashMap<>();
+        Date date = new Date(new java.util.Date().getTime());
+        logs.put(getDrone(), Arrays.asList(getAuditDto(1L, date, 99D), getAuditDto(2L, date, 99D)));
+        return logs;
     }
 
     private MedicationDto getMedications(Long id, String name, String imageName, Double weight, String code, byte[] image) {
@@ -157,6 +187,15 @@ public class DroneRestControllerTests {
         dto.setSerialNo("TEST-DRONE-23675890-12679");
         dto.setWeight(28D);
         dto.setBatteryCapacity(90D);
+        return dto;
+    }
+
+    private AuditDto getAuditDto(Long id, Date date, Double init) {
+        AuditDto dto = new AuditDto();
+        dto.setId(id);
+        dto.setAuditedOn(date);
+        dto.setInitialBattery(init);
+        dto.setUpdatedBattery(init - 2.0);
         return dto;
     }
 }

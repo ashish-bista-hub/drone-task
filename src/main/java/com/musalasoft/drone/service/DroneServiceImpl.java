@@ -1,11 +1,14 @@
 package com.musalasoft.drone.service;
 
 import com.musalasoft.drone.constants.DroneState;
+import com.musalasoft.drone.dto.AuditDto;
 import com.musalasoft.drone.dto.DroneDto;
 import com.musalasoft.drone.dto.MedicationDto;
+import com.musalasoft.drone.entity.Audit;
 import com.musalasoft.drone.entity.Drone;
 import com.musalasoft.drone.entity.Medication;
 import com.musalasoft.drone.exception.DroneException;
+import com.musalasoft.drone.repository.AuditRepository;
 import com.musalasoft.drone.repository.DroneRepository;
 import com.musalasoft.drone.repository.MedicationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,9 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.imageio.ImageIO;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -29,13 +30,14 @@ import java.util.stream.Collectors;
 @Service
 public class DroneServiceImpl implements DroneService {
 
-    private static final String UPLOAD_DIR = System.getProperty("user.home") + "/drone";
-
     @Autowired
     private DroneRepository droneRepository;
 
     @Autowired
     private MedicationRepository medicationRepository;
+
+    @Autowired
+    private AuditRepository auditRepository;
 
     @Override
     public DroneDto registerDrone(DroneDto droneDto) {
@@ -62,6 +64,11 @@ public class DroneServiceImpl implements DroneService {
         Drone drone = droneOpt.get();
         if (DroneState.IDLE != drone.getState() && DroneState.LOADING != drone.getState()) {
             throw new DroneException("Drone must be in the Idle or Loading state to perform this action.");
+        }
+        if (drone.getPercentage() < 25) {
+            drone.setState(DroneState.LOADED);
+            droneRepository.save(drone);
+            throw new DroneException("Drone battery level has reached below 25%. Now, Loading not allowed.");
         }
         if (!StringUtils.hasLength(medicationDto.getName()) || !medicationDto.getName().matches("[0-9A-Za-z\\-]+")) {
             throw new DroneException("Medication name is mandatory and allowed only letters, numbers and '-', '_'");
@@ -111,16 +118,18 @@ public class DroneServiceImpl implements DroneService {
 
     @Override
     public List<DroneDto> getAllDronesByState(DroneState droneState) {
-        return droneRepository.findDronesByState(droneState).stream()
-                .map(drone -> {
-                    DroneDto droneDto = new DroneDto();
-                    droneDto.setId(drone.getId());
-                    droneDto.setSerialNo(drone.getSerialNo());
-                    droneDto.setBatteryCapacity(drone.getPercentage());
-                    droneDto.setDroneModel(drone.getModel());
-                    droneDto.setWeight(drone.getWeight());
-                    return droneDto;
-                }).collect(Collectors.toList());
+        return droneRepository.findDronesByState(droneState).stream().map(DroneServiceImpl::getDroneDto).collect(Collectors.toList());
+    }
+
+    private static DroneDto getDroneDto(Drone drone) {
+        DroneDto droneDto = new DroneDto();
+        droneDto.setId(drone.getId());
+        droneDto.setSerialNo(drone.getSerialNo());
+        droneDto.setBatteryCapacity(drone.getPercentage());
+        droneDto.setDroneModel(drone.getModel());
+        droneDto.setWeight(drone.getWeight());
+        droneDto.setDroneState(drone.getState());
+        return droneDto;
     }
 
     @Override
@@ -128,6 +137,8 @@ public class DroneServiceImpl implements DroneService {
         return medicationRepository.findByDroneId(droneId).stream()
                 .map(medication -> {
                     MedicationDto medicationDto = new MedicationDto();
+                    medicationDto.setName(medication.getName());
+                    medicationDto.setCode(medication.getCode());
                     medicationDto.setId(medication.getId());
                     medicationDto.setImageName(medication.getImageName());
                     medicationDto.setImage(medication.getImage());
@@ -143,6 +154,26 @@ public class DroneServiceImpl implements DroneService {
             return Collections.emptyList();
         }
         return getAllMedications(drone.getId());
+    }
+
+    @Override
+    public Map<DroneDto, List<AuditDto>> getAllAudits(Long droneId) {
+        List<Audit> auditList = auditRepository.findByDroneIdOrderByAuditedOnDesc(droneId);
+        if (CollectionUtils.isEmpty(auditList)) {
+            throw new DroneException("Audit logs are not found for this id : " + droneId);
+        }
+        List<AuditDto> auditDtos = new ArrayList<>();
+        auditList.forEach(audit -> {
+            AuditDto auditDto = new AuditDto();
+            auditDto.setId(audit.getId());
+            auditDto.setInitialBattery(audit.getInitialBattery());
+            auditDto.setUpdatedBattery(audit.getUpdatedBattery());
+            auditDto.setAuditedOn(audit.getAuditedOn());
+            auditDtos.add(auditDto);
+        });
+        Map<DroneDto, List<AuditDto>> audits = new LinkedHashMap<>();
+        audits.put(getDroneDto(auditList.get(0).getDrone()), auditDtos);
+        return audits;
     }
 
     private boolean validateImageFile(MultipartFile image) {
