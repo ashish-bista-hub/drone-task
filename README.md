@@ -95,3 +95,6 @@ The tests are run when you start the app by any of the methods mentioned above e
 1. Entity levels
 2. Service method levels
 3. Rest controller level
+
+## Periodic task
+For periodic task spring boot feature scheduler is used which is scheduled to run at 10 seconds interval and which will update drone battery usage.
