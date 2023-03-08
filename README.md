@@ -58,4 +58,40 @@ This app uses in-memory [H2](http://www.h2database.com/html/main.html)
 
 ## Rest APIs end-point & JSON
 The rest APIs documentation is also available in swagger, just for the FYI
+#### To register drone
+```http://localhost:8080/api/v1/drone/register```
+```json
+{
+  "droneModel": "LIGHT_WEIGHT",
+  "serialNo": "Drone-MKYU-0L-UTRE-987",
+  "weight": 500
+}
+```
+![#1589F0](https://via.placeholder.com/15/1589F0/1589F0.png) `Note - battery full capacity & initial state for drone 99D`
+#### To load medication
+```http://localhost:8080/api/v1/drone/17/load?medication```
+1. Get the drone id which you have just registered or look up in the db table drone to get id
+2. use the same drone id as path variable
+3. Then select an image file from the file uploader
+4. Then place the following medication json
+```json
+{"code":"TEST-MED-1098-OPY","name":"Test-med-para-cetamol-098","weight":200}
+```
+#### To check the audit logs
+```http://localhost:8080/api/v1/drone/1/audits```
 
+where 1 is the existing drone id which is created on app load.
+
+Similarly, try out other end-points also.
+
+## Unit Test
+The tests are run when you start the app by any of the methods mentioned above either maven or jar
+1. Private method tests are covered from public method tests are they used in that context and scope limited to class.
+2. For dependency calls, like call to service/repository methods are mocked
+3. Minimum of 80% code coverage is done
+
+## Validations
+```javax.validations and custom validations are performed at```
+1. Entity levels
+2. Service method levels
+3. Rest controller level

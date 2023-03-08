@@ -14,5 +14,5 @@ import java.util.List;
 @Repository
 public interface AuditRepository extends JpaRepository<Audit, Long> {
 
-    List<Audit> findByDroneIdOrderByAuditedOnDesc(Long droneId);
+    List<Audit> findByDroneIdOrderByUpdatedBatteryAscAuditedOnDesc(Long droneId);
 }

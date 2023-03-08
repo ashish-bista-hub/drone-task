@@ -46,7 +46,7 @@ public class DroneServiceImpl implements DroneService {
         drone.setModel(droneDto.getDroneModel());
         drone.setWeight(droneDto.getWeight());
         drone.setState(DroneState.IDLE);
-        drone.setPercentage(droneDto.getBatteryCapacity());
+        drone.setPercentage(99D);
         drone = droneRepository.saveAndFlush(drone);
         droneDto.setId(drone.getId());
         return droneDto;
@@ -158,7 +158,7 @@ public class DroneServiceImpl implements DroneService {
 
     @Override
     public Map<DroneDto, List<AuditDto>> getAllAudits(Long droneId) {
-        List<Audit> auditList = auditRepository.findByDroneIdOrderByAuditedOnDesc(droneId);
+        List<Audit> auditList = auditRepository.findByDroneIdOrderByUpdatedBatteryAscAuditedOnDesc(droneId);
         if (CollectionUtils.isEmpty(auditList)) {
             throw new DroneException("Audit logs are not found for this id : " + droneId);
         }

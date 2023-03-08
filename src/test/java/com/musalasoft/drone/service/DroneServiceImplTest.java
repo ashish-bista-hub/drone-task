@@ -129,11 +129,11 @@ class DroneServiceImplTest {
 
     @Test
     void getAllAudits() {
-        when(auditRepository.findByDroneIdOrderByAuditedOnDesc(1L)).thenReturn(Collections.singletonList(getAudit()));
+        when(auditRepository.findByDroneIdOrderByUpdatedBatteryAscAuditedOnDesc(1L)).thenReturn(Collections.singletonList(getAudit()));
         Map<DroneDto, List<AuditDto>> audits = droneService.getAllAudits(1L);
         assertNotNull(audits);
         assertEquals(audits.size(), 1);
-        verify(auditRepository, times(1)).findByDroneIdOrderByAuditedOnDesc(1L);
+        verify(auditRepository, times(1)).findByDroneIdOrderByUpdatedBatteryAscAuditedOnDesc(1L);
     }
 
     private Audit getAudit() {
